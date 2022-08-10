@@ -3,23 +3,15 @@ import torch
 import torch.nn as nn
 
 
-class FaceLandmarkNet(nn.Module):
-    def __init__(self, backbone:str = "effiecient_net", num_pts:int=68):
-        super(FaceLandmarkNet, self).__init__()
-        self.num_pts = num_pts
-        self.backbone: nn.Module = self._get_backbone(backbone)
-        
+class FERNet(nn.Module):
+    def __init__(self, backbone:nn.Module, num_classes:int=7):
+        super(FERNet, self).__init__()
+        self.num_classes = num_classes
+        self.backbone: nn.Module  = backbone
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.3, inplace=True),
-            nn.BatchNorm1d(1024),
-            nn.ReLU(),
-            
-            nn.Linear(in_features=1024, out_features=512),
-            nn.Dropout(p=0.2, inplace=True),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            
-            nn.Linear(in_features=512, out_features=num_pts),
+            nn.Dropout(p=0.5, inplace=True),
+            nn.Mish(),
+            nn.Linear(in_features=512, out_features=num_classes, bias=True),
         )
         
     def forward(self, x):
@@ -27,22 +19,11 @@ class FaceLandmarkNet(nn.Module):
         x = self.classifier(x)
         return x
     
-    
-    def _get_backbone(self, backbone:str = "efficient_net"):
-        if backbone== "effiecient_net":
-            return efficientnet_v2_s(num_classes=1024)
-        elif backbone== "mobilenet_v3":
-            return mobilenet_v3(num_classes=1024)
-        elif backbone== "quantized_mobilenet_v3":
-            return quantized_mobilenet_v3(num_classes=1024)
-        else:
-            raise Exception("Backbone not supported")
-    
 def efficientnet_v2_s(weights_path=None, num_classes=512):
     from torchvision.models import efficientnet, EfficientNet_V2_S_Weights
     env2s = efficientnet.efficientnet_v2_s(weights=EfficientNet_V2_S_Weights.IMAGENET1K_V1)
     env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
         if Path(weights_path).exists():

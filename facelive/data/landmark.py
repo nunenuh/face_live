@@ -4,11 +4,9 @@ import PIL
 from PIL import Image
 
 from pathlib import Path
-
 import numpy as np
 import pandas as pd
-
-
+import xmltodict
 
 class IBug300WDataset(Dataset):
     def __init__(self, root, train=True, val_size=0.2, transforms=None):
@@ -20,9 +18,10 @@ class IBug300WDataset(Dataset):
     
     def _load_image(self, path, to_grayscale=False):
         img = Image.open(path)
+        img = img.convert('RGB')
         if to_grayscale:
             img = img.convert('L')
-        return img
+        return np.array(img).astype(np.uint8)
     
     def _load_text_file(self, path):
         with open(path, 'r') as f:
@@ -91,13 +90,12 @@ class IBug300WDataset(Dataset):
         image = self._load_image(str(img_path))
         points = self._load_points(str(pts_path))
         
+        sample = {'image': image, 'keypoints': points}
+        
         if self.transforms:
-            image, points = self.transforms(image, points)
-                
-        return image, points
+            sample = self.transforms(sample)
         
-        
-        
+        return sample
         
 class IBugDLib300WDataset(Dataset):
     def __init__(self, root, train=True, transforms=None, 
@@ -114,9 +112,10 @@ class IBugDLib300WDataset(Dataset):
         
     def _load_image(self, path, to_grayscale=False):
         img = Image.open(path)
+        img = img.convert('RGB')
         if to_grayscale:
             img = img.convert('L')
-        return img
+        return np.array(img).astype(np.uint8)
     
     def _load_xml_to_dict(self, path):
         with open(path, 'r', encoding='utf-8') as file:
@@ -170,10 +169,12 @@ class IBugDLib300WDataset(Dataset):
         image = self._load_image(impath)
         points = self._get_points(data)
         
-        if self.transforms:
-            image, points = self.transforms(image, transforms)
+        sample = {'image': image, 'keypoints': points}
         
-        return image, points
+        if self.transforms:
+            sample = self.transforms(sample)
+        
+        return sample
         
         
     
