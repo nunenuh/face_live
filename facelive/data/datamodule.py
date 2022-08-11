@@ -23,7 +23,8 @@ def landmark_transform_fn(size=96):
 
 def fer2013_train_transform_fn(size=224):
     tmf = transforms.Compose([
-            transforms.RandomResizedCrop(size),
+            transforms.Resize(size),
+            # transforms.RandomResizedCrop(size),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -34,8 +35,8 @@ def fer2013_train_transform_fn(size=224):
 
 def fer2013_valid_transform_fn(size=224):
     tmf = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(size),
+            transforms.Resize(size),
+            # transforms.CenterCrop(size),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
