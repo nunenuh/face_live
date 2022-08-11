@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 # from torchvision.models import 
 import torchvision.models as models
 import torchmetrics 
+from .metrics import RootMeanSquaredError
 from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3, NaimishNet
 
 class FaceLandmarkTask(pl.LightningModule):
@@ -13,14 +14,15 @@ class FaceLandmarkTask(pl.LightningModule):
         
         self.model: FaceLandmarkNet = NaimishNet(num_pts=num_pts)
         
-        self.trn_loss: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
-        self.val_loss: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
+        self.trn_mse: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
+        self.val_mse: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
         
-        self.trn_mae: torchmetrics.AverageMeter  = torchmetrics.MeanAbsoluteError()
-        self.val_mae: torchmetrics.AverageMeter  = torchmetrics.MeanAbsoluteError()
+        self.trn_rmse: RootMeanSquaredError  = RootMeanSquaredError()
+        self.val_rmse: RootMeanSquaredError  = RootMeanSquaredError()
         
         self.learning_rate = lr
-        self.criterion = nn.L1Loss()
+        self.criterion = nn.SmoothL1Loss()
+        
         self.save_hyperparameters()
         self.save_hyperparameters(kwargs)
         
@@ -52,31 +54,34 @@ class FaceLandmarkTask(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
-        trn_mae = self.trn_mae(preds, labels)
-        trn_loss = self.trn_loss(preds, labels)
+        trn_rmse = self.trn_rmse(preds, labels)
+        trn_mse = self.trn_mse(preds, labels)
         
-        self.log('trn_loss', trn_loss, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
-        self.log('trn_mae', trn_mae,  prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        
+        self.log('trn_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        self.log('trn_mse', trn_mse, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
+        self.log('trn_rmse', trn_rmse,  prog_bar=True, logger=True, on_step=True, on_epoch=True)
         
         return loss
         
     # def training_epoch_end(self, outs):
-    #     self.log('trn_epoch_loss', self.trn_loss.compute(), logger=True)
+    #     self.log('trn_epoch_loss', self.trn_mse.compute(), logger=True)
     #     self.log('trn_epoch_avg', self.trn_avg.compute(), logger=True)
         
         
     def validation_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
-        val_loss = self.val_loss(preds, labels)
-        val_mae = self.val_mae(preds, labels)
+        val_mse = self.val_mse(preds, labels)
+        val_rmse = self.val_rmse(preds, labels)
         
-        self.log('val_loss', val_loss, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
-        self.log('val_mae', val_mae,  prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
+        self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        self.log('val_mse', val_mse, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
+        self.log('val_rmse', val_rmse,  prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
         
         return loss
     
     # def validation_epoch_end(self, outs):
-    #     self.log('val_epoch_loss', self.val_loss.compute(), logger=True)
+    #     self.log('val_epoch_loss', self.val_mse.compute(), logger=True)
     #     self.log('val_epoch_avg', self.val_avg.compute(), logger=True)
     
     
