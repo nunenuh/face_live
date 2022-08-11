@@ -98,19 +98,22 @@ class IBugDlib300WDataModule(pl.LightningDataModule):
     
     
 class FER2013DataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = 'path/to/dir', batch_size: int = 32, num_workers: int = 16, **kwargs):
+    def __init__(self, data_dir: str = 'path/to/dir', batch_size: int = 32, num_workers: int = 16, 
+                 image_size=48, **kwargs):
         super().__init__()
         self.data_dir = data_dir
         self.traindir = str(Path(data_dir).joinpath('train'))
         self.validdir = str(Path(data_dir).joinpath('test'))
         
+        self.image_size = image_size
+        
         self.batch_size = batch_size
         self.num_workers = num_workers
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = ImageFolder(root=self.traindir, transform=fer2013_train_transform_fn())
-        self.validset = ImageFolder(root=self.validdir, transform=fer2013_valid_transform_fn())
-        self.predset = ImageFolder(root=self.validdir,  transform=fer2013_valid_transform_fn())
+        self.trainset = ImageFolder(root=self.traindir, transform=fer2013_train_transform_fn(size=self.image_size))
+        self.validset = ImageFolder(root=self.validdir, transform=fer2013_valid_transform_fn(size=self.image_size))
+        self.predset = ImageFolder(root=self.validdir,  transform=fer2013_valid_transform_fn(size=self.image_size))
         
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
