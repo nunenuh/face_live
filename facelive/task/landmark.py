@@ -5,19 +5,19 @@ import pytorch_lightning as pl
 # from torchvision.models import 
 import torchvision.models as models
 import torchmetrics 
-from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3
+from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3, NaimishNet
 
 class FaceLandmarkTask(pl.LightningModule):
     def __init__(self, pretrained=True, num_pts=136, lr=0.001, **kwargs):
         super().__init__()
         
-        self.model: FaceLandmarkNet = FaceLandmarkNet(num_pts=num_pts)
+        self.model: FaceLandmarkNet = NaimishNet(num_pts=num_pts)
         
         self.trn_loss: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
         self.val_loss: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
         
-        self.trn_avg: torchmetrics.AverageMeter  = torchmetrics.MeanMetric()
-        self.val_avg: torchmetrics.AverageMeter  = torchmetrics.MeanMetric()
+        self.trn_mae: torchmetrics.AverageMeter  = torchmetrics.MeanAbsoluteError()
+        self.val_mae: torchmetrics.AverageMeter  = torchmetrics.MeanAbsoluteError()
         
         self.learning_rate = lr
         self.criterion = nn.L1Loss()
@@ -52,11 +52,11 @@ class FaceLandmarkTask(pl.LightningModule):
     
     def training_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
-        trn_avg = self.trn_avg(preds, labels)
+        trn_mae = self.trn_mae(preds, labels)
         trn_loss = self.trn_loss(preds, labels)
         
         self.log('trn_loss', trn_loss, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
-        self.log('trn_avg', trn_avg,  prog_bar=True, logger=True, on_step=True, on_epoch=True)
+        self.log('trn_mae', trn_mae,  prog_bar=True, logger=True, on_step=True, on_epoch=True)
         
         return loss
         
@@ -68,10 +68,10 @@ class FaceLandmarkTask(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
         val_loss = self.val_loss(preds, labels)
-        val_avg = self.val_avg(preds, labels)
+        val_mae = self.val_mae(preds, labels)
         
         self.log('val_loss', val_loss, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
-        self.log('val_avg', val_avg,  prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
+        self.log('val_mae', val_mae,  prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
         
         return loss
     

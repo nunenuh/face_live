@@ -8,7 +8,7 @@ from torchvision import transforms
 from .. import transforms as CT
 
 
-def landmark_transform_fn(size=224):
+def landmark_transform_fn(size=96):
     tfm = transforms.Compose([
         CT.Rescale(250),
         CT.RandomCrop(size),
