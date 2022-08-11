@@ -65,10 +65,10 @@ class NaimishNet(nn.Module):
         
 
 class FaceLandmarkNet(nn.Module):
-    def __init__(self, backbone:str = "effiecient_net", num_pts:int=68):
+    def __init__(self, backbone_name:str = "effiecient_net", num_pts:int=68):
         super(FaceLandmarkNet, self).__init__()
         self.num_pts = num_pts
-        self.backbone: nn.Module = self._get_backbone(backbone)
+        self.backbone: nn.Module = self._get_backbone(backbone_name)
         
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.3, inplace=True),

@@ -9,11 +9,14 @@ from .metrics import RootMeanSquaredError
 from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3, NaimishNet
 
 class FaceLandmarkTask(pl.LightningModule):
-    def __init__(self, pretrained=True, num_pts=136, lr=0.001, **kwargs):
+    def __init__(self, pretrained=True, network_name="naimish", num_pts=136, lr=0.001, **kwargs):
         super().__init__()
         
-        self.model: FaceLandmarkNet = NaimishNet(num_pts=num_pts)
-        
+        if network_name=="naimish":
+            self.model: NaimishNet = NaimishNet(num_pts=num_pts)
+        elif network_name=="landmark":
+            self.model: FaceLandmarkNet = FaceLandmarkNet(backbone_name=kwargs.get("backbone_name", None), num_pts=num_pts)
+            
         self.trn_mse: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
         self.val_mse: torchmetrics.MeanSquaredError = torchmetrics.MeanSquaredError()
         
