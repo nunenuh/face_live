@@ -7,6 +7,8 @@ import torchvision.models as models
 import torchmetrics 
 # from .metrics import RootMeanSquaredError
 # from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3, NaimishNet
+from torch.optim.lr_scheduler import OneCycleLR
+
 from ..models.fer import FERNet
 
 class FERTask(pl.LightningModule):
@@ -27,9 +29,11 @@ class FERTask(pl.LightningModule):
         self.save_hyperparameters(kwargs)
         
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        return optimizer
-    
+        opt = optim.AdamW(params=self.model.parameters(),lr=self.learning_rate )
+        scheduler = OneCycleLR(opt,max_lr=1e-2, epochs=10, steps_per_epoch=28709//64//8)
+        lr_scheduler = {'scheduler': scheduler, 'interval': 'step'}
+        return {'optimizer': opt,'lr_scheduler':scheduler}
+
     def forward(self, x):
         return self.model(x)
     

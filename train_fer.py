@@ -4,10 +4,11 @@ import argparse
 
 import torch
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
+# from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 
-
+from pytorch_lightning import seed_everything, LightningModule, Trainer
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, LearningRateMonitor
 from facelive.data.datamodule import IBug300WDataModule, IBugDlib300WDataModule, FER2013DataModule
 from facelive.task.fer import FERTask
 # import mlflow
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     fertask = FERTask(**dict_args)
     
     # model_checkpoint = ModelCheckpoint(monitor="val_step_loss")
-    model_checkpoint = pl.callbacks.ModelCheckpoint(
+    model_checkpoint = ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
         filename="emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
@@ -53,10 +54,13 @@ if __name__ == "__main__":
         monitor='val_loss',
         mode='min',
     )
+    # seed_everything(0)
+    earlystop = EarlyStopping(monitor="val_loss",patience=10, verbose=True)
+    lr_monitor = LearningRateMonitor(logging_interval='step')
     
     logger = TensorBoardLogger(save_dir='logs/', name='facelandmark')
     
-    trainer = pl.Trainer.from_argparse_args(hparams, callbacks=[model_checkpoint], logger=logger)
+    trainer = pl.Trainer.from_argparse_args(hparams, callbacks=[model_checkpoint, earlystop, lr_monitor], logger=logger)
     trainer.fit(fertask, datamod)
     # with mlflow.start_run() as run:
     #     trainer.fit(facekeypoint, datamod)
