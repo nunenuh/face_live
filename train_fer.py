@@ -68,9 +68,9 @@ if __name__ == "__main__":
     
     
     metrics =  trainer.logged_metrics
-    vacc, vloss, last_epoch = metrics['val_step_avg'], metrics['val_step_loss'], trainer.current_epoch
+    vacc, vloss, last_epoch = metrics['val_step_acc1'], metrics['val_step_loss'], trainer.current_epoch
     
-    filename = f'facelandmark-e{last_epoch:02d}_avg{vacc:.4f}_loss{vloss:.4f}.pth'
+    filename = f'emotion-{last_epoch:02d}_{vacc:.4f}_loss{vloss:.4f}.pth'
     saved_filename = str(Path('weights').joinpath(filename))
     
     logging.info(f"Prepare to save training results to path {saved_filename}")
