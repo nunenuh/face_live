@@ -5,11 +5,11 @@ import torch
 from torch.utils.data import DataLoader
 import pytorch_lightning as pl 
 from .landmark import IBug300WDataset, IBugDLib300WDataset
-from torchvision.datasets.fer2013 import FER2013
+from .fer import FER2013
 from torchvision import transforms
 from .. import transforms as CT
 from torchvision.datasets import ImageFolder
-
+from torchvision import transforms as T
 
 def landmark_transform_fn(size=96):
     tfm = transforms.Compose([
@@ -18,30 +18,40 @@ def landmark_transform_fn(size=96):
         CT.Normalize(),
         CT.ToTensor()
     ])
-    
     return tfm
 
 def fer2013_train_transform_fn(size=224):
-    tmf = transforms.Compose([
-            transforms.Resize(size),
-            # transforms.RandomResizedCrop(size),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    tmf = T.Compose([
+        T.Resize(size),
+        T.RandomAffine(10),
+        T.RandomHorizontalFlip(),
+        T.RandomRotation(30),
+        T.ToTensor(),
+        T.Normalize((0.507395516207, ),(0.255128989415, )) 
     ])
     return tmf
     
 
 def fer2013_valid_transform_fn(size=224):
-    tmf = transforms.Compose([
-            transforms.Resize(size),
-            # transforms.CenterCrop(size),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-    ])
+    tmf = T.Compose([
+        T.Resize(size),
+        T.ToTensor(),
+        T.Normalize((0.507395516207, ),(0.255128989415, ))
+    ])  
     return tmf
+
+
+train_transform = T.Compose([
+                T.RandomAffine(10),
+                T.RandomHorizontalFlip(),
+                T.RandomRotation(30),
+                T.ToTensor(),
+                T.Normalize((0.507395516207, ),(0.255128989415, )) 
+                ])
+val_transform = T.Compose([
+            T.ToTensor(),
+            T.Normalize((0.507395516207, ),(0.255128989415, ))
+            ])  
 
 
 class IBug300WDataModule(pl.LightningDataModule):
@@ -103,8 +113,6 @@ class FER2013DataModule(pl.LightningDataModule):
                  image_size=48, **kwargs):
         super().__init__()
         self.data_dir = data_dir
-        self.traindir = str(Path(data_dir).joinpath('train'))
-        self.validdir = str(Path(data_dir).joinpath('test'))
         
         self.image_size = image_size
         
@@ -112,9 +120,10 @@ class FER2013DataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = ImageFolder(root=self.traindir, transform=fer2013_train_transform_fn(size=self.image_size))
-        self.validset = ImageFolder(root=self.validdir, transform=fer2013_valid_transform_fn(size=self.image_size))
-        self.predset = ImageFolder(root=self.validdir,  transform=fer2013_valid_transform_fn(size=self.image_size))
+        print(f'Preparing datamodule for stage {stage}, please wait...')
+        self.trainset = FER2013(root=self.data_dir, mode='train', transform=fer2013_train_transform_fn(size=self.image_size))
+        self.validset = FER2013(root=self.data_dir, mode='valid', transform=fer2013_valid_transform_fn(size=self.image_size))
+        self.testset = FER2013(root=self.data_dir, mode='test', transform=fer2013_valid_transform_fn(size=self.image_size))
         
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
@@ -123,9 +132,9 @@ class FER2013DataModule(pl.LightningDataModule):
         return DataLoader(self.validset, batch_size=self.batch_size,  num_workers=self.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.validset, batch_size=self.batch_size,  num_workers=self.num_workers)
+        return DataLoader(self.testset, batch_size=self.batch_size,  num_workers=self.num_workers)
 
     def predict_dataloader(self):
-        return DataLoader(self.validset, batch_size=self.batch_size,  num_workers=self.num_workers)
+        return DataLoader(self.testset, batch_size=self.batch_size,  num_workers=self.num_workers)
         
         

@@ -46,7 +46,7 @@ class FERTask(pl.LightningModule):
 
         # convert variables to floats for regression loss
         images = images.to(self.device)
-        target = target.to(self.device)
+        target = target.long().to(self.device)
         
         preds = self.model(images) # align with Attention.forward
         loss = self.criterion(preds, target)
