@@ -9,10 +9,16 @@ class FERNet(nn.Module):
         self.num_classes = num_classes
         self.backbone: nn.Module  = self._get_backbone(backbone_name)
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5, inplace=True),
+            nn.Dropout(p=0.3, inplace=True),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(in_features=512, out_features=num_classes, bias=True),
+            
+            nn.Linear(in_features=512, out_features=512),
+            nn.Dropout(p=0.2, inplace=True),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            
+            nn.Linear(in_features=512, out_features=num_classes),
         )
     
     def _get_backbone(self, name):
