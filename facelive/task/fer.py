@@ -52,6 +52,7 @@ class FERTask(pl.LightningModule):
         return loss, preds, target
     
     def training_step(self, batch, batch_idx):
+        self.model.train()
         loss, preds, labels = self.shared_step(batch, batch_idx)
         trn_acc1 = self.trn_acc1(preds, labels)
         trn_acc5 = self.trn_acc5(preds, labels)
@@ -65,6 +66,7 @@ class FERTask(pl.LightningModule):
         return loss
         
     def validation_step(self, batch, batch_idx):
+        self.model.eval()
         loss, preds, labels = self.shared_step(batch, batch_idx)
         val_acc1 = self.val_acc1(preds, labels)
         val_acc5 = self.val_acc5(preds, labels)
