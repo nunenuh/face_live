@@ -27,7 +27,7 @@ class FERTask(pl.LightningModule):
         self.save_hyperparameters(kwargs)
         
     def configure_optimizers(self):
-        optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, amsgrad=True)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
         return optimizer
     
     def forward(self, x):

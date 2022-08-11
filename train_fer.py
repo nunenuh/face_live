@@ -48,7 +48,7 @@ if __name__ == "__main__":
     model_checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
-        filename="emotion-e{epoch:02d}-{val_loss:.4f}-{val_avg:.4f}",
+        filename="emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
         verbose=True,
         monitor='val_loss',
         mode='min',
