@@ -31,7 +31,7 @@ class FERTask(pl.LightningModule):
         
     def configure_optimizers(self):
         opt = optim.AdamW(params=self.model.parameters(),lr=self.learning_rate )
-        scheduler = OneCycleLR(opt, max_lr=1e-3, epochs=50)
+        scheduler = OneCycleLR(opt,max_lr=1e-3, epochs=50, steps_per_epoch=28709//64//8)
         lr_scheduler = {'scheduler': scheduler, 'interval': 'step'}
         return {'optimizer': opt,'lr_scheduler':scheduler}
 
