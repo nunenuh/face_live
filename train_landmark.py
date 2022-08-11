@@ -19,6 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_type', type=str, default="std")
     parser.add_argument('--backbone_name', type=str, default="mobilenet_v3")
     parser.add_argument('--network_name', type=str, default="naimish")
+    parser.add_argument('--image_size', type=int, default=224)
     
     
     

@@ -20,16 +20,18 @@ def landmark_transform_fn(size=96):
 
 
 class IBug300WDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers=16, **kwargs):
+    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers=16,
+                 image_size=96, **kwargs):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = IBug300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn())
-        self.validset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn())
-        self.predset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn())
+        self.trainset = IBug300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn(size=self.image_size))
+        self.validset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
+        self.predset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
 
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
@@ -45,16 +47,18 @@ class IBug300WDataModule(pl.LightningDataModule):
     
     
 class IBugDlib300WDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers: int = 16, **kwargs):
+    def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers: int = 16, 
+                 image_size=96, **kwargs):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = IBugDLib300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn())
-        self.validset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn())
-        self.predset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn())
+        self.trainset = IBugDLib300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn(size=self.image_size))
+        self.validset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
+        self.predset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
 
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
