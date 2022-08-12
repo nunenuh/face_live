@@ -77,13 +77,13 @@ if __name__ == "__main__":
     model_checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
-        filename=chk_name+"-e{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
+        filename=chk_name+"-e{epoch:02d}-{val_loss:.4f}-{val_mse:.4f}-{val_rmse:.4f}",
         verbose=True,
         monitor='val_loss',
         mode='min',
     )
     
-    logger = TensorBoardLogger(save_dir='logs/', name='facelandmark')
+    logger = TensorBoardLogger(save_dir='logs/', name='landmark')
     
     trainer = pl.Trainer.from_argparse_args(hparams, callbacks=[model_checkpoint], logger=logger)
     trainer.fit(fkptask, datamod)
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     # print(metrics)
     vacc, vloss, last_epoch = metrics['val_mse_epoch'], metrics['val_loss_epoch'], trainer.current_epoch
     
-    filename = f'{chk_name}-e{last_epoch:02d}_acc{vacc:.4f}_loss{vloss:.4f}.pth'
+    filename = f'{chk_name}-e{last_epoch:02d}_mse{vacc:.4f}_loss{vloss:.4f}.pth'
     saved_filename = str(Path('weights').joinpath(filename))
     
     logging.info(f"Prepare to save training results to path {saved_filename}")
-    torch.save(facekeypoint.model.state_dict(), saved_filename)
+    torch.save(fkptask.model.state_dict(), saved_filename)
