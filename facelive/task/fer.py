@@ -16,6 +16,7 @@ class FERTask(pl.LightningModule):
     def __init__(self, pretrained=True, network_name="naimish", num_classes=7, lr=0.0125, **kwargs):
         super().__init__()
         self.model: FERNet = FERNet(backbone_name=kwargs.get("backbone_name", None), num_classes=num_classes)
+        self.model.unfreeze()
         
         self.trn_acc1: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=1)
         self.trn_acc5: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=5)
