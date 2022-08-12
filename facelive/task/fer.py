@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
 import pytorch_lightning as pl
 # from torchvision.models import 
 import torchvision.models as models
@@ -12,7 +13,7 @@ from torch.optim.lr_scheduler import OneCycleLR
 from ..models.fer import FERNet
 
 class FERTask(pl.LightningModule):
-    def __init__(self, pretrained=True, network_name="naimish", num_classes=7, lr=0.001, **kwargs):
+    def __init__(self, pretrained=True, network_name="naimish", num_classes=7, lr=0.0125, **kwargs):
         super().__init__()
         self.model: FERNet = FERNet(backbone_name=kwargs.get("backbone_name", None), num_classes=num_classes)
         
@@ -30,9 +31,9 @@ class FERTask(pl.LightningModule):
         self.save_hyperparameters(kwargs)
         
     def configure_optimizers(self):
-        opt = optim.AdamW(params=self.model.parameters(),lr=self.learning_rate )
-        scheduler = OneCycleLR(opt,max_lr=1e-3, epochs=50, steps_per_epoch=28709//64//8)
-        lr_scheduler = {'scheduler': scheduler, 'interval': 'step'}
+        opt = optim.SGD(params=self.model.parameters(),lr=self.learning_rate, momentum=0.89, weight_decay=4.50e-05)
+        scheduler = lr_scheduler.CosineAnnealingLR(opt, 100, eta_min=0, last_epoch=- 1, verbose=False)
+        # lr_scheduler = {'scheduler': scheduler, 'interval': 'step'}
         return {'optimizer': opt,'lr_scheduler':scheduler}
 
     def forward(self, x):
