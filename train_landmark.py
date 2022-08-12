@@ -45,7 +45,26 @@ if __name__ == "__main__":
     else:
         raise Exception("data_type must be either 'dlib' or 'std'")
     
-    facekeypoint = FaceLandmarkTask(**dict_args)
+    fkptask = FaceLandmarkTask(**dict_args)
+    
+    
+    freeze = dict_args.get("freeze", None)
+    if freeze!=None:
+        if freeze=="backbone":
+            fkptask.model.freeze_backbone()
+        if freeze=="classifier":
+            fkptask.model.freeze_classifier()
+        if freeze=="all":
+            fkptask.model.freeze_all()
+            
+    unfreeze = dict_args.get("unfreeze", None)
+    if unfreeze!=None:
+        if unfreeze=="backbone":
+            fkptask.model.unfreeze_backbone()
+        if unfreeze=="classifier":
+            fkptask.model.unfreeze_classifier()
+        if unfreeze=="all":
+            fkptask.model.unfreeze_all()
     
     
     net_name = dict_args.get("network_name", "expnet")
@@ -65,7 +84,7 @@ if __name__ == "__main__":
     logger = TensorBoardLogger(save_dir='logs/', name='facelandmark')
     
     trainer = pl.Trainer.from_argparse_args(hparams, callbacks=[model_checkpoint], logger=logger)
-    trainer.fit(facekeypoint, datamod)
+    trainer.fit(fkptask, datamod)
     # with mlflow.start_run() as run:
     #     trainer.fit(facekeypoint, datamod)
     # trainer.save_checkpoint("checkpoints/latest.ckpt")
