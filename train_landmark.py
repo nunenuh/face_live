@@ -47,11 +47,16 @@ if __name__ == "__main__":
     
     facekeypoint = FaceLandmarkTask(**dict_args)
     
+    
+    net_name = dict_args.get("network_name", "expnet")
+    chk_name = net_name
+    if net_name!="naimish":
+        chk_name +="-" + dict_args.get("backbone_name")
     # model_checkpoint = ModelCheckpoint(monitor="val_step_loss")
     model_checkpoint = pl.callbacks.ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
-        filename="facelandmark-e{epoch:02d}-{val_loss:.4f}-{val_avg:.4f}",
+        filename=chk_name+"-e{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
         verbose=True,
         monitor='val_loss',
         mode='min',
@@ -67,9 +72,10 @@ if __name__ == "__main__":
     
     
     metrics =  trainer.logged_metrics
-    vacc, vloss, last_epoch = metrics['val_step_avg'], metrics['val_step_loss'], trainer.current_epoch
+    # print(metrics)
+    vacc, vloss, last_epoch = metrics['val_mse_epoch'], metrics['val_loss_epoch'], trainer.current_epoch
     
-    filename = f'facelandmark-e{last_epoch:02d}_avg{vacc:.4f}_loss{vloss:.4f}.pth'
+    filename = f'{chk_name}-e{last_epoch:02d}_acc{vacc:.4f}_loss{vloss:.4f}.pth'
     saved_filename = str(Path('weights').joinpath(filename))
     
     logging.info(f"Prepare to save training results to path {saved_filename}")
