@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import pytorch_lightning as pl
+import torch.optim.lr_scheduler as lr_scheduler
+
 # from torchvision.models import 
 import torchvision.models as models
 import torchmetrics 
@@ -31,8 +33,10 @@ class FaceLandmarkTask(pl.LightningModule):
         
     def configure_optimizers(self):
         # optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, amsgrad=True)
-        return optimizer
+        optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate, betas=[0.9, 0.999], eps=1e-08)
+        sch_cosine = lr_scheduler.CosineAnnealingLR(optimizer, 100, eta_min=0, last_epoch=-1, verbose=False)
+        sch_cyclic = lr_scheduler.CyclicLR(optimizer, base_lr=self.learning_rate, max_lr=0.1)
+        return [optimizer], [sch_cosine, sch_cyclic]
     
     def forward(self, x):
         return self.model(x)
