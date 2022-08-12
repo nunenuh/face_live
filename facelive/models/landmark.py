@@ -65,7 +65,7 @@ class NaimishNet(nn.Module):
         
 
 class FaceLandmarkNet(nn.Module):
-    def __init__(self, backbone_name:str = "efficient_net", num_pts:int=68):
+    def __init__(self, backbone_name:str = "efficientnet_v2s", num_pts:int=68):
         super(FaceLandmarkNet, self).__init__()
         self.num_pts = num_pts
         self.backbone: nn.Module = self._get_backbone(backbone_name)
@@ -74,36 +74,66 @@ class FaceLandmarkNet(nn.Module):
             nn.Dropout(p=0.3, inplace=True),
             nn.BatchNorm1d(1024),
             nn.ReLU(),
-            
             nn.Linear(in_features=1024, out_features=512),
+            
             nn.Dropout(p=0.2, inplace=True),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            
             nn.Linear(in_features=512, out_features=num_pts),
         )
+        
+    def _get_backbone(self, name):
+        if name=="efficientnet_v2s":
+            return efficientnet_v2s(num_classes=1024)
+        elif name=="efficientnet_v2m":
+            return efficientnet_v2m(num_classes=1024)
+        elif name=="efficientnet_v2l":
+            return efficientnet_v2l(num_classes=1024)
+        elif name=="mobilenet_v3":
+            return mobilenet_v3(num_classes=1024)
+        elif name=="quantized_mobilenet_v3":
+            return quantized_mobilenet_v3(num_classes=1024)
+        else:
+            raise Exception("Unknown backbone")
         
     def forward(self, x):
         x = self.backbone(x)
         x = self.classifier(x)
         return x
     
+
+def efficientnet_v2l(weights_path=None, num_classes=1024):
+    from torchvision.models import efficientnet,  EfficientNet_V2_L_Weights
     
-    def _get_backbone(self, backbone:str = "efficient_net"):
-        if backbone== "efficient_net":
-            return efficientnet_v2_s(num_classes=1024)
-        elif backbone== "mobilenet_v3":
-            return mobilenet_v3(num_classes=1024)
-        elif backbone== "quantized_mobilenet_v3":
-            return quantized_mobilenet_v3(num_classes=1024)
-        else:
-            raise Exception("Backbone not supported")
+    env2s = efficientnet.efficientnet_v2_l(weights=EfficientNet_V2_L_Weights.IMAGENET1K_V1)
+    env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
-def efficientnet_v2_s(weights_path=None, num_classes=512):
+    if weights_path != None:
+        if Path(weights_path).exists():
+            env2s.load_state_dict(torch.load(weights_path))
+    
+    return env2s
+   
+
+def efficientnet_v2m(weights_path=None, num_classes=1024):
+    from torchvision.models import efficientnet,  EfficientNet_V2_M_Weights
+    
+    env2s = efficientnet.efficientnet_v2_m(weights=EfficientNet_V2_M_Weights.IMAGENET1K_V1)
+    env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
+    
+    if weights_path != None:
+        if Path(weights_path).exists():
+            env2s.load_state_dict(torch.load(weights_path))
+    
+    return env2s
+   
+def efficientnet_v2s(weights_path=None, num_classes=1024):
     from torchvision.models import efficientnet, EfficientNet_V2_S_Weights
     env2s = efficientnet.efficientnet_v2_s(weights=EfficientNet_V2_S_Weights.IMAGENET1K_V1)
     env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
-    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes)
+    env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
         if Path(weights_path).exists():
