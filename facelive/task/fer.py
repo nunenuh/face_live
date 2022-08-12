@@ -19,10 +19,10 @@ class FERTask(pl.LightningModule):
         self.model.unfreeze()
         
         self.trn_acc1: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=1)
-        self.trn_acc5: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=5)
+        self.trn_acc3: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=3)
         
         self.val_acc1: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=1)
-        self.val_acc5: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=5)
+        self.val_acc3: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=3)
         
         self.learning_rate = lr
         self.criterion = nn.CrossEntropyLoss()
@@ -60,11 +60,11 @@ class FERTask(pl.LightningModule):
         self.model.train()
         loss, preds, labels = self.shared_step(batch, batch_idx)
         trn_acc1 = self.trn_acc1(preds, labels)
-        trn_acc5 = self.trn_acc5(preds, labels)
+        trn_acc3 = self.trn_acc3(preds, labels)
         
         self.log('trn_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
         self.log('trn_acc1', trn_acc1, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
-        self.log('trn_acc5', trn_acc5, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
+        self.log('trn_acc3', trn_acc3, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
         
         return loss
         
@@ -72,11 +72,11 @@ class FERTask(pl.LightningModule):
         self.model.eval()
         loss, preds, labels = self.shared_step(batch, batch_idx)
         val_acc1 = self.val_acc1(preds, labels)
-        val_acc5 = self.val_acc5(preds, labels)
+        val_acc3 = self.val_acc3(preds, labels)
         
         self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
         self.log('val_acc1', val_acc1, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
-        self.log('val_acc5', val_acc5, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
+        self.log('val_acc3', val_acc3, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
         
         return loss
     

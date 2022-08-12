@@ -45,7 +45,7 @@ if __name__ == "__main__":
     #     datamod = IBug300WDataModule(**dict_args)
     # else:
     #     raise Exception("data_type must be either 'dlib' or 'std'")
-    
+    backbone_name = dict_args.get("backbone_name", "mobilenet_v3")
     
     datamod = FER2013DataModule(**dict_args)
     fertask = FERTask(**dict_args)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     model_checkpoint = ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
-        filename="emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
+        filename=backbone_name+"-emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
         verbose=True,
         monitor='val_loss',
         mode='min',
@@ -95,6 +95,7 @@ if __name__ == "__main__":
     
     metrics =  trainer.logged_metrics
     vacc, vloss, last_epoch = metrics['val_step_acc1'], metrics['val_step_loss'], trainer.current_epoch
+    
     
     filename = f'emotion-{last_epoch:02d}_{vacc:.4f}_loss{vloss:.4f}.pth'
     saved_filename = str(Path('weights').joinpath(filename))
