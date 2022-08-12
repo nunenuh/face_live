@@ -66,7 +66,16 @@ class NaimishNet(nn.Module):
     def freeze_classifier(self):
         for param in self.classifier.parameters():
             param.requires_grad = False
-        
+    
+    def freeze(self):
+        self.freeze_backbone()
+        self.freeze_classifier()
+    
+    def unfreeze(self):
+        self.unfreeze_backbone()
+        self.unfreeze_classifier()
+    
+    
     def forward(self, x):
         x = self.features(x)
         
@@ -124,6 +133,14 @@ class FaceLandmarkNet(nn.Module):
     def freeze_classifier(self):
         for param in self.classifier.parameters():
             param.requires_grad = False
+    
+    def freeze(self):
+        self.freeze_backbone()
+        self.freeze_classifier()
+    
+    def unfreeze(self):
+        self.unfreeze_backbone()
+        self.unfreeze_classifier()
         
     def forward(self, x):
         x = self.backbone(x)
