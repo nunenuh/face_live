@@ -18,6 +18,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default=None)
     # parser.add_argument('--data_type', type=str, default="std")
+    parser.add_argument('--network_name', type=str, default="expnet")
     parser.add_argument('--backbone_name', type=str, default="mobilenet_v3")
     parser.add_argument('--image_size', type=int, default=224)
     
@@ -68,13 +69,16 @@ if __name__ == "__main__":
         if unfreeze=="all":
             fertask.model.unfreeze_all()
     
-    
-    
+    net_name = dict_args.get("network_name", "expnet")
+    chk_name = net_name
+    if net_name!="expnet":
+        chk_name +="-" + dict_args.get("backbone_name")
+        
     # model_checkpoint = ModelCheckpoint(monitor="val_step_loss")
     model_checkpoint = ModelCheckpoint(
         dirpath='checkpoints/',
         save_top_k=1,
-        filename=backbone_name+"-emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
+        filename=chk_name+"-emotion-{epoch:02d}-{val_loss:.4f}-{val_acc1:.4f}",
         verbose=True,
         monitor='val_loss',
         mode='min',

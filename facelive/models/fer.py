@@ -4,28 +4,40 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class NaimishNet(nn.Module):
-    def __init__(self, num_pts=136):
-        super(NaimishNet, self).__init__()
+
+
+class FaceExpressionNet(nn.Module):
+    def __init__(self, num_classes:int=7):
+        super(FaceExpressionNet, self).__init__()        
+        self.features = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size=5, stride=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=5, stride=2),
+            
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3),
+            nn.ReLU(),
+            nn.AvgPool2d(kernel_size=3, stride=2),
+            
+            nn.Conv2d(64, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size=3),
+            nn.ReLU(),
+            nn.AvgPool2d(kernel_size=3, stride=2),
+        )
         
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=(4,4))
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=(3,3), stride=1, padding=0)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=(2,2), stride=1, padding=0)
-        self.conv4 = nn.Conv2d(128, 256, kernel_size=(1,1), stride=1, padding=0)
-        
-        self.dropout_conv1 = nn.Dropout(p=0.1)
-        self.dropout_conv2 = nn.Dropout(p=0.2)
-        self.dropout_conv3 = nn.Dropout(p=0.3)
-        self.dropout_conv4 = nn.Dropout(p=0.4)
-        
-        self.pool = nn.MaxPool2d(kernel_size=(2,2), stride=2, padding=0)
-        
-        self.fc1 = nn.Linear(in_features=6400, out_features=1000)
-        self.fc2 = nn.Linear(in_features=1000, out_features=500)
-        self.fc3 = nn.Linear(in_features=500, out_features=num_pts)
-        
-        self.dropout_fc1 = nn.Dropout(p=0.5)
-        self.dropout_fc2 = nn.Dropout(p=0.6)
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features=128*1*1, out_features=1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            
+            nn.Linear(in_features=1024, out_features=1024),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            
+            nn.Linear(in_features=1024, out_features=num_classes)
+        )
         
         # self._init_weights()
         
@@ -35,31 +47,39 @@ class NaimishNet(nn.Module):
                 m.weight = nn.init.uniform(m.weight)
             elif isinstance(m, nn.Linear):
                 m.weight = nn.init.xavier_uniform(m.weight)
-        
-    def forward(self, x):
-        x = self.pool(F.elu(self.conv1(x)))
-        x = self.dropout_conv1(x)
-        
-        x = self.pool(F.elu(self.conv2(x)))
-        x = self.dropout_conv2(x)
-        
-        x = self.pool(F.elu(self.conv3(x)))
-        x = self.dropout_conv3(x)
     
-        x = self.pool(F.elu(self.conv4(x)))
-        x = self.dropout_conv4(x)
+    def unfreeze_backbone(self):
+        for param in self.features.parameters():
+            param.requires_grad = True
         
-        # print(x.shape)
-        
+    def freeze_backbone(self):
+        for param in self.features.parameters():
+            param.requires_grad = False
+    
+    def unfreeze_classifier(self):
+        for param in self.classifier.parameters():
+            param.requires_grad = True
+    
+    def freeze_classifier(self):
+        for param in self.classifier.parameters():
+            param.requires_grad = False
+            
+    def freeze(self):
+        self.freeze_backbone()
+        self.freeze_classifier()
+    
+    def unfreeze(self):
+        self.unfreeze_backbone()
+        self.unfreeze_classifier()
+    
+    def forward(self, x):
+        #feature extraction
+        x= self.features(x)
+        # Flatten
         x = x.view(x.size(0), -1)
         
-        x = F.elu(self.fc1(x))
-        x = self.dropout_fc1(x)
-        
-        x = F.elu(self.fc2(x))
-        x = self.dropout_fc2(x)
-        
-        x = self.fc3(x)
+        # classifier
+        x = self.classifier(x)
         
         return x        
         
@@ -196,7 +216,12 @@ def quantized_mobilenet_v3(weights_path=None, num_classes=1024):
 
 
 if __name__ == "__main__":
-    net = FERNet(backbone_name='mobilenet_v3',num_classes=7)
-    input = torch.rand(2,1,96,96)
+    # net = FERNet(backbone_name='mobilenet_v3',num_classes=7)
+    # input = torch.rand(2,1,96,96)
+    # print(net(input))
+    
+    net = FaceExpressionNet(num_classes=7)
+    input = torch.rand(2,1,48,48)
     print(net(input))
+    
 

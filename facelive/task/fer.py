@@ -10,13 +10,19 @@ import torchmetrics
 # from ..models.landmark import FaceLandmarkNet, quantized_mobilenet_v3, NaimishNet
 from torch.optim.lr_scheduler import OneCycleLR
 
-from ..models.fer import FERNet
+from ..models.fer import FERNet, FaceExpressionNet
 
 class FERTask(pl.LightningModule):
     def __init__(self, pretrained=True, network_name="naimish", num_classes=7, lr=0.0125, **kwargs):
         super().__init__()
-        self.model: FERNet = FERNet(backbone_name=kwargs.get("backbone_name", None), num_classes=num_classes)
-        self.model.unfreeze()
+        
+        if network_name=="fernet":
+            self.model: FERNet = FERNet(backbone_name=kwargs.get("backbone_name", None), num_classes=num_classes)
+        elif network_name=="expnet":
+            self.model: FaceExpressionNet = FaceExpressionNet(num_classes=num_classes)
+        else:
+            raise Exception("Unknown network name: {}".format(network_name))
+
         
         self.trn_acc1: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=1)
         self.trn_acc3: torchmetrics.Accuracy = torchmetrics.Accuracy(top_k=3)
@@ -50,7 +56,7 @@ class FERTask(pl.LightningModule):
         
         # convert variables to floats for regression loss
         images = images.to(self.device)
-        target = target.long().to(self.device)
+        target = target.to(self.device)
         
         preds = self.model(images) # align with Attention.forward
         loss = self.criterion(preds, target)
