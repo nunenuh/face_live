@@ -78,7 +78,12 @@ class FERNet(nn.Module):
             nn.Dropout(p=0.2, inplace=True),
             nn.BatchNorm1d(512),
             nn.ReLU(),
-            nn.Linear(in_features=512, out_features=num_classes),
+            nn.Linear(in_features=512, out_features=256),
+            
+            nn.Dropout(p=0.1, inplace=True),
+            nn.BatchNorm1d(256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=num_classes),
         )
     
     def _get_backbone(self, name):
@@ -94,6 +99,30 @@ class FERNet(nn.Module):
             return quantized_mobilenet_v3(num_classes=1024)
         else:
             raise Exception("Unknown backbone")
+        
+    def unfreeze_backbone(self):
+        for param in self.backbone.parameters():
+            param.requires_grad = True
+        
+    def freeze_backbone(self):
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+    
+    def unfreeze_classifier(self):
+        for param in self.classifier.parameters():
+            param.requires_grad = True
+    
+    def freeze_classifier(self):
+        for param in self.classifier.parameters():
+            param.requires_grad = False
+            
+    def freeze(self):
+        self.freeze_backbone()
+        self.freeze_classifier()
+    
+    def unfreeze(self):
+        self.unfreeze_backbone()
+        self.unfreeze_classifier()
         
     def forward(self, x):
         x = self.backbone(x)
