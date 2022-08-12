@@ -33,9 +33,11 @@ class FERTask(pl.LightningModule):
         
     def configure_optimizers(self):
         opt = optim.SGD(params=self.model.parameters(),lr=self.learning_rate, momentum=0.89, weight_decay=4.50e-05)
-        scheduler = lr_scheduler.CosineAnnealingLR(opt, 100, eta_min=0, last_epoch=- 1, verbose=False)
-        # lr_scheduler = {'scheduler': scheduler, 'interval': 'step'}
-        return {'optimizer': opt,'lr_scheduler':scheduler}
+        sch_cosine = lr_scheduler.CosineAnnealingLR(opt, 100, eta_min=0, last_epoch=-1, verbose=False)
+        sch_cyclic = lr_scheduler.CyclicLR(opt, base_lr=self.learning_rate, max_lr=0.1)
+        # scheduler = [sch_cosine, sch_cyclic]
+        # return {'optimizer': [opt],'lr_scheduler': [sch_cosine, sch_cyclic]}
+        return [opt], [sch_cosine, sch_cyclic]
 
     def forward(self, x):
         return self.model(x)
@@ -45,7 +47,7 @@ class FERTask(pl.LightningModule):
         
     def shared_step(self, batch, batch_idx):
         images, target = batch
-
+        
         # convert variables to floats for regression loss
         images = images.to(self.device)
         target = target.long().to(self.device)
@@ -60,11 +62,9 @@ class FERTask(pl.LightningModule):
         trn_acc1 = self.trn_acc1(preds, labels)
         trn_acc5 = self.trn_acc5(preds, labels)
         
-        
         self.log('trn_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
         self.log('trn_acc1', trn_acc1, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
         self.log('trn_acc5', trn_acc5, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
-        
         
         return loss
         
@@ -74,11 +74,9 @@ class FERTask(pl.LightningModule):
         val_acc1 = self.val_acc1(preds, labels)
         val_acc5 = self.val_acc5(preds, labels)
         
-        
         self.log('val_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
         self.log('val_acc1', val_acc1, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
         self.log('val_acc5', val_acc5, prog_bar=True, logger=True,  on_step=True, on_epoch=True) 
-        
         
         return loss
     
