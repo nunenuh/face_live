@@ -101,6 +101,11 @@ class FaceLandmarkNet(nn.Module):
             nn.Dropout(p=0.2, inplace=True),
             nn.BatchNorm1d(512),
             nn.ReLU(),
+            nn.Linear(in_features=512, out_features=512),
+            
+            nn.Dropout(p=0.1, inplace=True),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
             nn.Linear(in_features=512, out_features=num_pts),
         )
         
