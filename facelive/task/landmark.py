@@ -36,7 +36,6 @@ class FaceLandmarkTask(pl.LightningModule):
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate, betas=[0.9, 0.999], eps=1e-08)
         # sch_cosine = lr_scheduler.CosineAnnealingLR(optimizer, 100, eta_min=0, last_epoch=-1, verbose=False)
         # sch_cyclic = lr_scheduler.OneCycleLR(optimizer, max_lr=1, epochs=10, steps_per_epoch=5000, verbose=False)
-        # return [optimizer], [sch_cosine, sch_cyclic]
         return optimizer
     
     def forward(self, x):
@@ -46,36 +45,29 @@ class FaceLandmarkTask(pl.LightningModule):
         loss.backward()
         
     def shared_step(self, batch, batch_idx):
-        images = batch['image']
-        key_pts = batch['keypoints']
+        images, landmarks = batch['image'], batch['landmark']
         
         # flatten pts
-        key_pts = key_pts.view(key_pts.size(0), -1)
+        landmarks = landmarks.view(landmarks.size(0), -1)
         
         # convert variables to floats for regression loss
-        key_pts = key_pts.type(torch.FloatTensor).to(self.device)
+        landmarks = landmarks.type(torch.FloatTensor).to(self.device)
         images = images.type(torch.FloatTensor).to(self.device)
         
         preds = self.model(images) # align with Attention.forward
-        loss = self.criterion(preds, key_pts)
-        return loss, preds, key_pts
+        loss = self.criterion(preds, landmarks)
+        return loss, preds, landmarks
     
     def training_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
         trn_rmse = self.trn_rmse(preds, labels)
         trn_mse = self.trn_mse(preds, labels)
         
-        
         self.log('trn_loss', loss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
         self.log('trn_mse', trn_mse, prog_bar=True, logger=True, on_step=True, on_epoch=True) 
         self.log('trn_rmse', trn_rmse,  prog_bar=True, logger=True, on_step=True, on_epoch=True)
         
         return loss
-        
-    # def training_epoch_end(self, outs):
-    #     self.log('trn_epoch_loss', self.trn_mse.compute(), logger=True)
-    #     self.log('trn_epoch_avg', self.trn_avg.compute(), logger=True)
-        
         
     def validation_step(self, batch, batch_idx):
         loss, preds, labels = self.shared_step(batch, batch_idx)
@@ -88,12 +80,7 @@ class FaceLandmarkTask(pl.LightningModule):
         
         return loss
     
-    # def validation_epoch_end(self, outs):
-    #     self.log('val_epoch_loss', self.val_mse.compute(), logger=True)
-    #     self.log('val_epoch_avg', self.val_avg.compute(), logger=True)
-    
-    
-    
+
 if __name__ == '__main__':
     import sys
     import os
