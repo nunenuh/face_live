@@ -55,7 +55,6 @@ def example_landmarks_transform_fn(rotate=30):
 
 def valid_landmarks_transform_fn(size=224):
     tfm = torchlm.LandmarksCompose([
-        torchlm.LandmarksRandomScale(prob=0.5),
         torchlm.LandmarksResize((size, size), keep_aspect=False),
         torchlm.LandmarksNormalize(),
         torchlm.LandmarksToTensor(),
@@ -84,8 +83,6 @@ def fer2013_valid_transform_fn(size=224):
     return tmf
 
 
-
-
 train_transform = T.Compose([
                 T.RandomAffine(10),
                 T.RandomHorizontalFlip(),
@@ -101,7 +98,7 @@ val_transform = T.Compose([
 
 class IBug300WDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers=16,
-                 image_size=96, **kwargs):
+                 image_size=224, **kwargs):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
@@ -130,7 +127,7 @@ class IBug300WDataModule(pl.LightningDataModule):
     
 class IBugDlib300WDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = "path/to/dir", batch_size: int = 32, num_workers: int = 16, 
-                 image_size=96, **kwargs):
+                 image_size=224, **kwargs):
         super().__init__()
         self.data_dir = data_dir
         self.batch_size = batch_size
