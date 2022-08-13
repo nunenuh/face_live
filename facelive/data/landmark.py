@@ -9,18 +9,19 @@ import pandas as pd
 import xmltodict
 
 class IBug300WDataset(Dataset):
-    def __init__(self, root, train=True, val_size=0.2, transforms=None):
+    def __init__(self, root, train=True, val_size=0.2, transform=None):
         self.root = root
         self.train = train
         self.val_size = val_size
-        self.transforms = transforms
+        self.transform = transform
         self.dframe = self._dframe()
     
     def _load_image(self, path, to_grayscale=False):
         img = Image.open(path)
-        img = img.convert('RGB')
         if to_grayscale:
             img = img.convert('L')
+        else:
+            img = img.convert('RGB')
         return np.array(img).astype(np.uint8)
     
     def _load_text_file(self, path):
@@ -90,15 +91,13 @@ class IBug300WDataset(Dataset):
         image = self._load_image(str(img_path))
         points = self._load_points(str(pts_path))
         
-        sample = {'image': image, 'keypoints': points}
+        if self.transform:
+            image, points = self.transform(image, points)
         
-        if self.transforms:
-            sample = self.transforms(sample)
-        
-        return sample
+        return {'image': image, 'landmark': points}
         
 class IBugDLib300WDataset(Dataset):
-    def __init__(self, root, train=True, transforms=None, 
+    def __init__(self, root, train=True, transform=None, 
             train_xml_file = 'labels_ibug_300W_train.xml',
             test_xml_file = 'labels_ibug_300W_test.xml',
         ):
@@ -106,15 +105,17 @@ class IBugDLib300WDataset(Dataset):
         self.train = train
         self.xml_train_file = Path(root).joinpath(train_xml_file)
         self.xml_valid_file = Path(root).joinpath(test_xml_file)
-        self.transforms = transforms
+        self.transform = transform
         # self.dframe = self._dframe()
         self.xmldata = self._xmldata()
         
     def _load_image(self, path, to_grayscale=False):
         img = Image.open(path)
-        img = img.convert('RGB')
         if to_grayscale:
             img = img.convert('L')
+        else:
+            img = img.convert('RGB')
+            
         return np.array(img).astype(np.uint8)
     
     def _load_xml_to_dict(self, path):
@@ -138,7 +139,7 @@ class IBugDLib300WDataset(Dataset):
     
     def _get_size(self, data):
         w, h = data["@width"], data["@height"]
-        return w,h
+        return w, h
     
     def _get_box(self, data):
         top = data["box"]["@top"]
@@ -169,12 +170,11 @@ class IBugDLib300WDataset(Dataset):
         image = self._load_image(impath)
         points = self._get_points(data)
         
-        sample = {'image': image, 'keypoints': points}
         
-        if self.transforms:
-            sample = self.transforms(sample)
+        if self.transform:
+            image, points = self.transform(image, points)
         
-        return sample
+        return {'image': image, 'landmark': points}
         
         
     

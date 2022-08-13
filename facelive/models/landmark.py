@@ -9,7 +9,7 @@ class NaimishNet(nn.Module):
         super(NaimishNet, self).__init__()
         
         self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=(4,4)),
+            nn.Conv2d(3, 32, kernel_size=(4,4)),
             nn.ELU(),
             nn.MaxPool2d(kernel_size=(2,2), stride=2, padding=0),
             nn.Dropout(p=0.1),
@@ -152,7 +152,7 @@ def efficientnet_v2l(weights_path=None, num_classes=1024):
     from torchvision.models import efficientnet,  EfficientNet_V2_L_Weights
     
     env2s = efficientnet.efficientnet_v2_l(weights=EfficientNet_V2_L_Weights.IMAGENET1K_V1)
-    env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    # env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
@@ -166,7 +166,7 @@ def efficientnet_v2m(weights_path=None, num_classes=1024):
     from torchvision.models import efficientnet,  EfficientNet_V2_M_Weights
     
     env2s = efficientnet.efficientnet_v2_m(weights=EfficientNet_V2_M_Weights.IMAGENET1K_V1)
-    env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    # env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
@@ -178,7 +178,7 @@ def efficientnet_v2m(weights_path=None, num_classes=1024):
 def efficientnet_v2s(weights_path=None, num_classes=1024):
     from torchvision.models import efficientnet, EfficientNet_V2_S_Weights
     env2s = efficientnet.efficientnet_v2_s(weights=EfficientNet_V2_S_Weights.IMAGENET1K_V1)
-    env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    # env2s.features[0][0] = nn.Conv2d(1, 24, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     env2s.classifier[1] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
@@ -190,7 +190,7 @@ def efficientnet_v2s(weights_path=None, num_classes=1024):
 def mobilenet_v3(weights_path=None, num_classes=512):
     from torchvision.models import mobilenetv3, MobileNet_V3_Small_Weights
     mnv3 = mobilenetv3.mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1)
-    mnv3.features[0][0] = nn.Conv2d(1, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    # mnv3.features[0][0] = nn.Conv2d(1, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     mnv3.classifier[3] = nn.Linear(in_features=1024, out_features=num_classes, bias=True)
     
     if weights_path != None:
@@ -199,11 +199,10 @@ def mobilenet_v3(weights_path=None, num_classes=512):
     
     return mnv3
 
-
 def quantized_mobilenet_v3(weights_path=None, num_classes=512):
     from torchvision.models import quantization
     qmvn3 = quantization.mobilenet_v3_large(weights=quantization.MobileNet_V3_Large_QuantizedWeights)
-    qmvn3.features[0][0] = nn.Conv2d(1, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
+    # qmvn3.features[0][0] = nn.Conv2d(1, 16, kernel_size=(3, 3), stride=(2, 2), padding=(1, 1), bias=False)
     qmvn3.classifier[3] = nn.Linear(in_features=1280, out_features=num_classes, bias=True)
     
     if weights_path != None:
@@ -211,7 +210,6 @@ def quantized_mobilenet_v3(weights_path=None, num_classes=512):
             qmvn3.load_state_dict(torch.load(weights_path))
         
     return qmvn3
-
 
 
 if __name__ == "__main__":

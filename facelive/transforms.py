@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import cv2
 # tranforms
+import torchvision.transforms.functional as TF
 
 class Normalize(object):
     """Convert a color image to grayscale and normalize the color range to [0,1]."""        
@@ -95,6 +96,57 @@ class RandomCrop(object):
 
         return {'image': image, 'keypoints': key_pts}
 
+
+
+class RandomRotation:
+    def __init__(self, rotation_limit,):
+        self.rotation_limit = rotation_limit
+        self.CROP_SIZE = 128
+
+    def __call__(self, sample):
+        image, key_pts = sample['image'], sample['keypoints']
+
+        h, w = image.shape[:2]
+        if isinstance(self.output_size, int):
+            if h > w:
+                new_h, new_w = self.output_size * h / w, self.output_size
+            else:
+                new_h, new_w = self.output_size, self.output_size * w / h
+        else:
+            new_h, new_w = self.output_size
+
+        new_h, new_w = int(new_h), int(new_w)
+
+        img = cv2.resize(image, (new_w, new_h))
+        
+        # scale the pts, too
+        key_pts = key_pts * [new_w / w, new_h / h]
+
+        return {'image': img, 'keypoints': key_pts}
+
+    def random_rotation(self, sample):
+        image, landmarks = sample['image'], sample['keypoints']
+        
+        angle = np.random.uniform(-self.rotation_limit, self.rotation_limit)
+        image = TF.rotate(image, angle)
+
+        landmarks = landmarks.reshape(-1, 2)
+        landmarks = torch.hstack((landmarks, torch.ones((landmarks.shape[0], 1))))
+        center = (CROP_SIZE / 2, CROP_SIZE / 2)
+        rad = angle * np.pi / 180.0
+        alpha = np.cos(rad)
+        beta = np.sin(rad)
+        M_torch = torch.tensor([[alpha, beta, (1-alpha)*center[0] - beta*center[1]],
+                                [-beta, alpha, beta*center[0] + (1-alpha)*center[1]]], dtype=torch.float32)
+        new_landmark = torch.matmul(landmarks, M_torch.T)
+
+        return image, new_landmark
+    
+    def __call__(self, sample):
+        image, landmarks = self.random_rotation(sample['image'], sample['landmarks'])
+        sample['image'] = image
+        sample['landmarks'] = landmarks.flatten()
+        return sample
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""

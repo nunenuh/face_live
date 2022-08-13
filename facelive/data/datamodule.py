@@ -11,6 +11,9 @@ from .. import transforms as CT
 from torchvision.datasets import ImageFolder
 from torchvision import transforms as T
 
+import torchlm
+
+
 def landmark_transform_fn(size=96):
     tfm = transforms.Compose([
         CT.Rescale(250),
@@ -18,6 +21,46 @@ def landmark_transform_fn(size=96):
         CT.Normalize(),
         CT.ToTensor()
     ])
+    return tfm
+
+def train_landmarks_transform_fn(size=224, rotate=30):
+    tfm = torchlm.LandmarksCompose([
+        torchlm.LandmarksRandomMaskMixUp(prob=0.25),
+        torchlm.LandmarksRandomBackgroundMixUp(prob=0.25),
+        torchlm.LandmarksRandomScale(prob=0.25),
+        torchlm.LandmarksRandomTranslate(prob=0.25),
+        torchlm.LandmarksRandomBlur(kernel_range=(5, 25), prob=0.25),
+        torchlm.LandmarksRandomBrightness(prob=0.25),
+        torchlm.LandmarksRandomRotate(rotate, prob=0.25, bins=8),
+        torchlm.LandmarksRandomCenterCrop((0.5, 1.0), (0.5, 1.0), prob=0.25),
+        torchlm.LandmarksResize((size, size), keep_aspect=False),
+        torchlm.LandmarksNormalize(),
+        torchlm.LandmarksToTensor(),
+    ])
+    return tfm
+
+def example_landmarks_transform_fn(rotate=30):
+    tfm = torchlm.LandmarksCompose([
+        torchlm.LandmarksRandomMaskMixUp(prob=0.25),
+        torchlm.LandmarksRandomBackgroundMixUp(prob=0.25),
+        torchlm.LandmarksRandomScale(prob=0.25),
+        torchlm.LandmarksRandomTranslate(prob=0.25),
+        torchlm.LandmarksRandomBlur(kernel_range=(5, 25), prob=0.25),
+        torchlm.LandmarksRandomBrightness(prob=0.25),
+        torchlm.LandmarksRandomRotate(rotate, prob=0.25, bins=8),
+        torchlm.LandmarksRandomCenterCrop((0.5, 1.0), (0.5, 1.0), prob=0.25),
+        # torchlm.LandmarksNormalize(),
+    ])
+    return tfm
+
+def valid_landmarks_transform_fn(size=224):
+    tfm = torchlm.LandmarksCompose([
+        torchlm.LandmarksRandomScale(prob=0.5),
+        torchlm.LandmarksResize((size, size), keep_aspect=False),
+        torchlm.LandmarksNormalize(),
+        torchlm.LandmarksToTensor(),
+    ])
+    
     return tfm
 
 def fer2013_train_transform_fn(size=224):
@@ -39,6 +82,8 @@ def fer2013_valid_transform_fn(size=224):
         T.Normalize((0.507395516207, ),(0.255128989415, ))
     ])  
     return tmf
+
+
 
 
 train_transform = T.Compose([
@@ -64,9 +109,11 @@ class IBug300WDataModule(pl.LightningDataModule):
         self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = IBug300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn(size=self.image_size))
-        self.validset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
-        self.predset = IBug300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
+        self.trainset = IBug300WDataset(root=self.data_dir, train=True, transform=train_landmarks_transform_fn(size=self.image_size))
+        self.validset = IBug300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
+        self.predset = IBug300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
+        
+        
 
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
@@ -91,9 +138,10 @@ class IBugDlib300WDataModule(pl.LightningDataModule):
         self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
-        self.trainset = IBugDLib300WDataset(root=self.data_dir, train=True, transforms=landmark_transform_fn(size=self.image_size))
-        self.validset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
-        self.predset = IBugDLib300WDataset(root=self.data_dir, train=False, transforms=landmark_transform_fn(size=self.image_size))
+        self.trainset = IBugDLib300WDataset(root=self.data_dir, train=True, transform=train_landmarks_transform_fn(size=self.image_size))
+        self.validset = IBugDLib300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
+        self.predset = IBugDLib300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
+        self.dataset = IBugDLib300WDataset(root=self.data_dir, train=True, transform=example_landmarks_transform_fn())
 
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
