@@ -20,6 +20,8 @@ class FERTask(pl.LightningModule):
             self.model: FERNet = FERNet(backbone_name=kwargs.get("backbone_name", None), num_classes=num_classes)
         elif network_name=="expnet":
             self.model: FaceExpressionNet = FaceExpressionNet(num_classes=num_classes)
+        elif network_name=="naimish":
+            self.model: FaceExpressionNet = FaceExpressionNet(num_classes=num_classes)
         else:
             raise Exception("Unknown network name: {}".format(network_name))
 
@@ -38,7 +40,7 @@ class FERTask(pl.LightningModule):
         self.save_hyperparameters(kwargs)
         
     def configure_optimizers(self):
-        opt = optim.SGD(params=self.model.parameters(),lr=self.learning_rate, momentum=0.89, weight_decay=4.50e-05)
+        opt = optim.SGD(params=self.model.parameters(),lr=self.learning_rate, momentum=0.89, weight_decay=4.50e-05,)
         sch_cosine = lr_scheduler.CosineAnnealingLR(opt, 100, eta_min=0, last_epoch=-1, verbose=False)
         sch_cyclic = lr_scheduler.CyclicLR(opt, base_lr=self.learning_rate, max_lr=0.1)
         # scheduler = [sch_cosine, sch_cyclic]
