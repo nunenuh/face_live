@@ -1,0 +1,6 @@
+python train_fer.py --data_dir /path/to/train --gpus 1 --image_size 48 --network_name expnet --lr 0.00125 --freeze backbone
+
+
+python train_landmark.py --data_dir /path/to/train --data_type dlib --image_size 96 --batch_size 64 --network_name naimish --lr 0.00125 --freeze backbone --gpus 1
+
+
