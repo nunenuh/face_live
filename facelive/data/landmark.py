@@ -142,11 +142,12 @@ class IBugDLib300WDataset(Dataset):
         return w, h
     
     def _get_box(self, data):
-        top = data["box"]["@top"]
-        left = data["box"]["@left"]
-        width = data["box"]["@width"]
-        height = data["box"]["@height"]
-        return top, left, width, height
+        left = float(data["box"]["@left"])
+        top = float(data["box"]["@top"])
+        width = float(data["box"]["@width"])
+        height = float(data["box"]["@height"])
+
+        return left, top, width, height
     
     def _get_points(self, data):
         parts = data["box"]["part"]
@@ -175,7 +176,52 @@ class IBugDLib300WDataset(Dataset):
             image, points = self.transform(image, points)
         
         return {'image': image, 'landmark': points}
+    
+    def _scaled_by_facebox(self, data, image, points, scale = 1.5):
+        scaler = (scale-1)/2
+        x, y, w, h = self._get_box(data)
+        xmin,ymin,xmax,ymax = x,y,x+w,y+h
+        ymin = ymin - int(scaler * h)
+        ymax = ymax + int(scaler * h)
+        xmin = xmin - int(scaler * w)
+        xmax = xmax + int(scaler * w)
         
+        if ymin<=0: ymin = 0
+        if xmin<=0: xmin = 0
+        if xmax>=image.shape[1]: xmax = image.shape[1]
+        if ymax>=image.shape[0]: ymax = image.shape[0]
+        
+        # points operation
+        points = [[(xp-xmin), (yp-ymin)] for xp,yp in points.tolist()]
+        points = np.array(points)
+        # points = points - [xmin/w, ymin/h]
+        # points = points / [w, h]
+        
+        #image crop
+        face = image[int(ymin):int(ymax), int(xmin):int(xmax)]
+        
+        return face, points
+
+        
+        
+    def getitem(self, idx, scale=1.5):
+        data = self.xmldata[idx]
+        # print(data)
+        
+        impath = self._image_path(data)
+        impath = str(Path(self.root).joinpath(impath))
+        
+        image = self._load_image(impath)
+        print(self._get_box(data))
+        points = self._get_points(data)
+        
+        image, points = self._scaled_by_facebox(data, image, points, scale=scale)
+        
+        
+        if self.transform:
+            image, points = self.transform(image, points)
+        
+        return {'image': image, 'landmark': points}
         
     
 
