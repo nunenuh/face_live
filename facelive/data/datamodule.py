@@ -39,7 +39,7 @@ def train_landmarks_transform_fn(size=224, rotate=30):
     ])
     return tfm
 
-def example_landmarks_transform_fn(rotate=30):
+def example_landmarks_transform_fn(size=224, rotate=30):
     tfm = torchlm.LandmarksCompose([
         torchlm.LandmarksRandomMaskMixUp(prob=0.25),
         torchlm.LandmarksRandomBackgroundMixUp(prob=0.25),
@@ -49,6 +49,7 @@ def example_landmarks_transform_fn(rotate=30):
         torchlm.LandmarksRandomBrightness(prob=0.25),
         torchlm.LandmarksRandomRotate(rotate, prob=0.25, bins=8),
         torchlm.LandmarksRandomCenterCrop((0.5, 1.0), (0.5, 1.0), prob=0.25),
+        torchlm.LandmarksResize((size, size), keep_aspect=False),
         # torchlm.LandmarksNormalize(),
     ])
     return tfm
@@ -64,7 +65,7 @@ def valid_landmarks_transform_fn(size=224):
 
 def fer2013_train_transform_fn(size=224):
     tmf = T.Compose([
-        T.Resize(size),
+        T.Resize((size,size)),
         T.RandomAffine(10),
         T.RandomHorizontalFlip(),
         T.RandomRotation(30),
@@ -74,9 +75,17 @@ def fer2013_train_transform_fn(size=224):
     return tmf
     
 
-def fer2013_valid_transform_fn(size=224):
+def fer2013_valid_transform_fn(size=48):
     tmf = T.Compose([
-        T.Resize(size),
+        T.Resize((size,size)),
+        T.ToTensor(),
+        T.Normalize((0.507395516207, ),(0.255128989415, ))
+    ])  
+    return tmf
+
+def fer2013_example_transform_fn(size=48):
+    tmf = T.Compose([
+        T.Resize((size,size)),
         T.ToTensor(),
         T.Normalize((0.507395516207, ),(0.255128989415, ))
     ])  
@@ -106,12 +115,11 @@ class IBug300WDataModule(pl.LightningDataModule):
         self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
+        print(f'Preparing datamodule for stage {stage}, please wait...')
         self.trainset = IBug300WDataset(root=self.data_dir, train=True, transform=train_landmarks_transform_fn(size=self.image_size))
         self.validset = IBug300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
         self.predset = IBug300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
         
-        
-
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
 
@@ -135,6 +143,7 @@ class IBugDlib300WDataModule(pl.LightningDataModule):
         self.image_size = image_size
         
     def setup(self, stage: Optional[str] = None):
+        print(f'Preparing datamodule for stage {stage}, please wait...')
         self.trainset = IBugDLib300WDataset(root=self.data_dir, train=True, transform=train_landmarks_transform_fn(size=self.image_size))
         self.validset = IBugDLib300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
         self.predset = IBugDLib300WDataset(root=self.data_dir, train=False, transform=valid_landmarks_transform_fn(size=self.image_size))
@@ -169,6 +178,7 @@ class FER2013DataModule(pl.LightningDataModule):
         self.trainset = FER2013(root=self.data_dir, mode='train', transform=fer2013_train_transform_fn(size=self.image_size))
         self.validset = FER2013(root=self.data_dir, mode='valid', transform=fer2013_valid_transform_fn(size=self.image_size))
         self.testset = FER2013(root=self.data_dir, mode='test', transform=fer2013_valid_transform_fn(size=self.image_size))
+        self.dataset = FER2013(root=self.data_dir, mode='test', transform=fer2013_example_transform_fn(size=self.image_size))
         
     def train_dataloader(self):
         return DataLoader(self.trainset, batch_size=self.batch_size, num_workers=self.num_workers)
@@ -181,5 +191,4 @@ class FER2013DataModule(pl.LightningDataModule):
 
     def predict_dataloader(self):
         return DataLoader(self.testset, batch_size=self.batch_size,  num_workers=self.num_workers)
-        
         
